@@ -7,12 +7,14 @@ import statsmodels.api as sm
 from time import time
 from algorithm_exceptions import *
 from dask.datasets import timeseries
+
 """
 This is no man's land. Do anything you want in here,
 as long as you return a boolean that determines whether the input
 timeseries is anomalous or not.
 To add an algorithm, define it here, and add its name to settings.ALGORITHMS.
 """
+
 
 def tail_avg(timeseries):
     """
@@ -34,9 +36,9 @@ def median_absolute_deviation(timeseries):
     respect to the median is X times larger than the median of deviations.
     """
     median = np.median(timeseries)
-    demedianed =  []
+    demedianed = []
     for t in timeseries:
-        demedianed.append( abs(t - median))
+        demedianed.append(abs(t - median))
     median_deviation = np.median(demedianed)
     # The test statistic is infinite when the median is zero,
     # so it becomes super sensitive. We play it safe and skip when this happens.
@@ -63,7 +65,8 @@ def grubbs(timeseries):
     len_series = len(series)
     threshold = stats.t.isf(.05 / (2 * len_series), len_series - 2)
     threshold_squared = threshold * threshold
-    grubbs_score = ((len_series - 1) / np.sqrt(len_series)) * np.sqrt(threshold_squared / (len_series - 2 + threshold_squared))
+    grubbs_score = ((len_series - 1) / np.sqrt(len_series)) * np.sqrt(
+        threshold_squared / (len_series - 2 + threshold_squared))
 
     return z_score > grubbs_score
 
@@ -97,13 +100,15 @@ def stddev_from_average(timeseries):
 
     return abs(t - mean) > 3 * stdDev
 
-def ewma( X, alpha=0.3):
-        s = [X[0]]
-        for i in range(1, len(X)):
-            temp = alpha * X[i] + (1 - alpha) * s[-1]
-            s.append(temp)
-        return s
-    
+
+def ewma(X, alpha=0.3):
+    s = [X[0]]
+    for i in range(1, len(X)):
+        temp = alpha * X[i] + (1 - alpha) * s[-1]
+        s.append(temp)
+    return s
+
+
 def stddev_from_moving_average(timeseries):
     """
     A timeseries is anomalous if the absolute value of the average of the latest
@@ -128,9 +133,9 @@ def mean_subtraction_cumulation(timeseries):
     series = []
     mean = np.mean(timeseries)
     for t in timeseries:
-        series.append( t - mean)
+        series.append(t - mean)
     stdDev = np.std(series)
-    #expAverage = pandas.stats.moments.ewma(series, com=15)
+    # expAverage = pandas.stats.moments.ewma(series, com=15)
 
     return abs(series[-1]) > 3 * stdDev
 
@@ -141,11 +146,11 @@ def least_squares(timeseries):
     on a projected least squares model is greater than three sigma.
     """
 
-    x = np.array( [i for i in range(len(timeseries))])
+    x = np.array([i for i in range(len(timeseries))])
     y = np.array(timeseries)
     A = np.vstack([x, np.ones(len(x))]).T
-    #results = np.linalg.lstsq(A, y)
-    #residual = results[1]
+    # results = np.linalg.lstsq(A, y)
+    # residual = results[1]
     m, c = np.linalg.lstsq(A, y, rcond=None)[0]
     errors = []
     for i in range(len(y)):
@@ -176,14 +181,14 @@ def histogram_bins(timeseries):
     h = np.histogram(series, bins=15)
     bins = h[1]
     for index, bin_size in enumerate(h[0]):
-        if bin_size <=5:
+        if bin_size <= 5:
             # Is it in the first bin?
             if index == 0:
                 if t <= bins[0]:
                     return True
             # Is it in the current bin?
             elif t >= bins[index] and t < bins[index + 1]:
-                    return True
+                return True
 
     return False
 
@@ -196,12 +201,12 @@ def ks_test(reference, probe):
     Dickey-Fuller test applied to check for stationarity.
     """
 
-    #hour_ago = time() - 3600
-    #ten_minutes_ago = time() - 600
-    #reference = scipy.array([x[1] for x in timeseries if x[0] >= hour_ago and x[0] < ten_minutes_ago])
-    #probe = scipy.array([x[1] for x in timeseries if x[0] >= ten_minutes_ago])
+    # hour_ago = time() - 3600
+    # ten_minutes_ago = time() - 600
+    # reference = scipy.array([x[1] for x in timeseries if x[0] >= hour_ago and x[0] < ten_minutes_ago])
+    # probe = scipy.array([x[1] for x in timeseries if x[0] >= ten_minutes_ago])
 
-    if len(reference)< 20 or len(probe) < 20:
+    if len(reference) < 20 or len(probe) < 20:
         return False
 
     ks_d, ks_p_value = stats.ks_2samp(reference, probe)
@@ -213,58 +218,63 @@ def ks_test(reference, probe):
 
     return False
 
+
 import logging
+
+
 def benchmark(ts, df, threshold=6):
-        timestamp = df['timestamp'].values
-        span = ts.span
-        y = []
-        for i in range(len(timestamp)):
-            if i % 5000 == 0:
-                print i*100.0/len(timestamp),"%"
-            #y.append( self.statistic(ts.get_series(timestamp[i], span)))
-            one_day = ts.get_series(timestamp[i], 3600*24/span)
-            three_hour = ts.get_series(timestamp[i], 3600*3/span)
-            ks = ts.get_series(timestamp[i], 3600*2/span)
-            counter = 0
-            if median_absolute_deviation(one_day):
-                counter += 1
-            if grubbs(one_day):
-                counter += 1
-            if first_hour_average(three_hour):
-                counter += 1
-            if stddev_from_average(one_day):
-                counter += 1
-            if stddev_from_moving_average(one_day):
-                counter += 1
-            if mean_subtraction_cumulation(one_day):
-                counter += 1
-            if least_squares(one_day):  
-                counter += 1
-            if histogram_bins(one_day):
-                counter += 1
-            if ks_test(three_hour, ks):
-                counter += 1  
-            if counter >= threshold:
-                y.append(1)#anomaly
-            else:
-                y.append(0)    
-        return y
-def evalute_delay(real, predict, delay = 7):
-    counter = 0#记录异常片段的长度
+    timestamp = df['timestamp'].values
+    span = ts.span
+    y = []
+    for i in range(len(timestamp)):
+        if i % 5000 == 0:
+            print(i * 100.0 / len(timestamp), "%")
+        # y.append( self.statistic(ts.get_series(timestamp[i], span)))
+        one_day = ts.get_series(timestamp[i], 3600 * 24 / span)
+        three_hour = ts.get_series(timestamp[i], 3600 * 3 / span)
+        ks = ts.get_series(timestamp[i], 3600 * 2 / span)
+        counter = 0
+        if median_absolute_deviation(one_day):
+            counter += 1
+        if grubbs(one_day):
+            counter += 1
+        if first_hour_average(three_hour):
+            counter += 1
+        if stddev_from_average(one_day):
+            counter += 1
+        if stddev_from_moving_average(one_day):
+            counter += 1
+        if mean_subtraction_cumulation(one_day):
+            counter += 1
+        if least_squares(one_day):
+            counter += 1
+        if histogram_bins(one_day):
+            counter += 1
+        if ks_test(three_hour, ks):
+            counter += 1
+        if counter >= threshold:
+            y.append(1)  # anomaly
+        else:
+            y.append(0)
+    return y
+
+
+def evalute_delay(real, predict, delay=7):
+    counter = 0  # 记录异常片段的长度
     tp = 0
     tn = 0
     fp = 0
     fn = 0
     find = False
     for i in range(len(predict)):
-        if real[i] == 0:#正常数据
+        if real[i] == 0:  # 正常数据
             if find:
                 tp += counter
                 counter = 0
                 find = False
             else:
                 fn += counter
-                counter = 0              
+                counter = 0
             if predict[i] == 0:
                 tn += 1
             else:
@@ -273,50 +283,52 @@ def evalute_delay(real, predict, delay = 7):
             if predict[i] != 0 and counter <= delay:
                 find = True
             counter += 1
-            #print counter
-    if counter > 0 and find:#处理尾部是异常的情况
-        tp += counter  
-    if counter >0 and find == False:
+            # print(counter)
+    if counter > 0 and find:  # 处理尾部是异常的情况
+        tp += counter
+    if counter > 0 and find == False:
         fn += counter
-    
-    print 'tp:',tp  
-    print 'tn:',tn 
-    print 'fp:',fp 
-    print 'fn:',fn  
-    if tp <=0:
+
+    print('tp:', tp)
+    print('tn:', tn)
+    print('fp:', fp)
+    print('fn:', fn)
+    if tp <= 0:
         f1 = 0
         precison = 0
         recall = 0
     else:
-        precison = tp*1.0/(tp+fp)
-        recall = tp*1.0/(tp+fn)
-        f1 = 2*precison*recall/(precison+recall)
-    print 'precison:',precison
-    print 'recall:',recall
-    print 'f1 score:',f1     
-    return  precison, recall, f1
+        precison = tp * 1.0 / (tp + fp)
+        recall = tp * 1.0 / (tp + fn)
+        f1 = 2 * precison * recall / (precison + recall)
+    print('precison:', precison)
+    print('recall:', recall)
+    print('f1 score:', f1)
+    return precison, recall, f1
+
+
 import pandas as pd
 from TSlist import TSlist
- 
+
 file_name = 'E:/javacode/AIOPS/data/series/'
 numbers = ['14']
-#numbers = ['2','6','7','10','19','27']
+# numbers = ['2','6','7','10','19','27']
 log = []
 for num in numbers:
-    print 'kpi:',num
-    train = pd.read_csv(file_name+num+'_train.csv')
+    print('kpi:', num)
+    train = pd.read_csv(file_name + num + '_train.csv')
     t = TSlist(train)
-    test = pd.read_csv(file_name+num+'_test.csv')
+    test = pd.read_csv(file_name + num + '_test.csv')
     t.append_df(test)
     t.fill_missed_median()
     y = benchmark(t, test)
     try:
-        precison, recall, f1  = evalute_delay(test['label'], y)
+        precison, recall, f1 = evalute_delay(test['label'], y)
         log.append([num, precison, recall, f1])
     except:
-        print 'trouble'
-    log_tmp = pd.DataFrame(log, columns=['kpi id','precison','recall','fscore'])
-    log_tmp.to_csv(num+'skyline.csv')
+        print('trouble')
+    log_tmp = pd.DataFrame(log, columns=['kpi id', 'precison', 'recall', 'fscore'])
+    log_tmp.to_csv(num + 'skyline.csv')
     del train
     del test
     del t

@@ -13,6 +13,7 @@ import xgboost as xgb
 from feature import feature_service
 from common.tsd_errorcode import *
 from common.tsd_common import *
+
 MODEL_PATH = os.path.join(os.path.dirname(__file__), '../model/')
 DEFAULT_MODEL = MODEL_PATH + "xgb_default_model"
 
@@ -45,7 +46,7 @@ class XGBoosting(object):
         :param max_depth: Maximum tree depth for base learners.
         :param eta: Value means model more robust to overfitting but slower to compute.
         :param gamma: Minimum loss reduction required to make a further partition on a leaf node of the tree.
-        :param silent: If 1, it will print information about performance. If 2, some additional information will be printed out.
+        :param silent: If 1, it will print(information about performance. If 2, some additional information will be printed out.)
         :param min_child_weight: Minimum sum of instance weight(hessian) needed in a child.
         :param subsample: Subsample ratio of the training instance.
         :param colsample_bytree: Subsample ratio of columns when constructing each tree.

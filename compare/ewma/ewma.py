@@ -12,7 +12,8 @@ import os
 from algorithm import isolation_forest, ewma, polynomial_interpolation, statistic, xgboosting
 from common.tsd_errorcode import *
 from common.tsd_common import *
-MODEL_PATH = os.path.join(os.path.dirname(__file__), './model/')
+
+MODEL_PATH = os.path.join(os.path.dirname(__file__), '../iforest/model/')
 
 
 class Detect(object):
@@ -51,11 +52,11 @@ class Detect(object):
             window = data["window"]
         else:
             window = DEFAULT_WINDOW
-        if len(data['dataC'].split(',')) != (2 * window +1):
+        if len(data['dataC'].split(',')) != (2 * window + 1):
             return TSD_CHECK_PARAM_FAILED, "dataC length does not match"
-        if len(data['dataB'].split(',')) != (2 * window +1):
+        if len(data['dataB'].split(',')) != (2 * window + 1):
             return TSD_CHECK_PARAM_FAILED, "dataB length does not match"
-        if len(data['dataA'].split(',')) != (window +1):
+        if len(data['dataA'].split(',')) != (window + 1):
             return TSD_CHECK_PARAM_FAILED, "dataA length does not match"
         return TSD_OP_SUCCESS, ""
 
@@ -87,10 +88,10 @@ class Detect(object):
             window = data["window"]
         else:
             window = DEFAULT_WINDOW
-        #statistic_result = self.statistic_obj.predict(time_series)
+        # statistic_result = self.statistic_obj.predict(time_series)
         ewma_result = self.ewma_obj.predict(time_series)
-        #polynomial_result = self.polynomial_obj.predict(time_series, window)
-        #iforest_result = self.iforest_obj.predict(time_series, window)
+        # polynomial_result = self.polynomial_obj.predict(time_series, window)
+        # iforest_result = self.iforest_obj.predict(time_series, window)
         if ewma_result == 0:
             res_value = 0
             prob = 0

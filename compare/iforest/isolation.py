@@ -12,6 +12,7 @@ import os
 from algorithm import isolation_forest, ewma, polynomial_interpolation, statistic, xgboosting
 from common.tsd_errorcode import *
 from common.tsd_common import *
+
 MODEL_PATH = os.path.join(os.path.dirname(__file__), './model/')
 
 
@@ -51,11 +52,11 @@ class Detect(object):
             window = data["window"]
         else:
             window = DEFAULT_WINDOW
-        if len(data['dataC'].split(',')) != (2 * window +1):
+        if len(data['dataC'].split(',')) != (2 * window + 1):
             return TSD_CHECK_PARAM_FAILED, "dataC length does not match"
-        if len(data['dataB'].split(',')) != (2 * window +1):
+        if len(data['dataB'].split(',')) != (2 * window + 1):
             return TSD_CHECK_PARAM_FAILED, "dataB length does not match"
-        if len(data['dataA'].split(',')) != (window +1):
+        if len(data['dataA'].split(',')) != (window + 1):
             return TSD_CHECK_PARAM_FAILED, "dataA length does not match"
         return TSD_OP_SUCCESS, ""
 

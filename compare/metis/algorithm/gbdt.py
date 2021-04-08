@@ -17,7 +17,6 @@ from time_series_detector.feature import feature_service
 from time_series_detector.common.tsd_common import *
 from time_series_detector.common.tsd_errorcode import *
 
-
 MODEL_PATH = os.path.join(os.path.dirname(__file__), '../model/')
 DEFAULT_MODEL = MODEL_PATH + "gbdt_default_model"
 
@@ -79,7 +78,8 @@ class Gbdt(object):
         X_train = np.array(X_train)
         y_train = np.array(y_train)
         try:
-            grd = GradientBoostingClassifier(n_estimators=self.n_estimators, max_depth=self.max_depth, learning_rate=self.learning_rate)
+            grd = GradientBoostingClassifier(n_estimators=self.n_estimators, max_depth=self.max_depth,
+                                             learning_rate=self.learning_rate)
             grd.fit(X_train, y_train)
             model_name = MODEL_PATH + task_id + "_model"
             joblib.dump(grd, model_name)
